@@ -101,7 +101,8 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 /* visées */
 .sights { display: grid; gap: 10px; }
 .sight { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: grid; gap: 10px; background: var(--field); }
-.sight-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sight-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.sight .angle + .angle { margin-top: 6px; }
 .sight-head .n { font: 600 13px var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
 .sight .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .sight .grid2 input { min-width: 0; padding-inline: 8px; }
@@ -156,19 +157,10 @@ details[open] summary { margin-bottom: 10px; }
   <header class="top">
     <h1>Point <span class="mark">Soleil</span></h1>
     <p class="lede">Hauteur du Soleil au sextant → latitude et longitude. Saisissez la lecture brute : le zéro et la division par deux sont appliqués automatiquement.</p>
-    <span class="example" id="exampleTag">Exemple chargé : visée du 27 octobre 2026 à Sion. Remplacez par vos mesures.</span>
   </header>
 
   <section class="card" aria-labelledby="h-inst">
     <h2 id="h-inst">Instrument</h2>
-    <div class="field">
-      <span class="label">Zéro de l'instrument (lecture en visant la hauteur 0)</span>
-      <div class="angle nosec">
-        <select id="zeroSign" aria-label="Signe du zéro"><option value="1">+</option><option value="-1">−</option></select>
-        <input id="zeroD" type="text" inputmode="decimal" aria-label="Zéro, degrés"><span class="u">°</span>
-        <input id="zeroM" type="text" inputmode="decimal" aria-label="Zéro, minutes"><span class="u">′</span>
-      </div>
-    </div>
     <div class="field">
       <span class="label">Horizon</span>
       <div class="seg" role="group" aria-label="Horizon">
@@ -178,7 +170,7 @@ details[open] summary { margin-bottom: 10px; }
     </div>
     <div class="field" id="eyeWrap">
       <label for="eye">Hauteur de l'œil au-dessus de l'eau (m)</label>
-      <input id="eye" type="number" inputmode="decimal" step="0.1" min="0" style="max-width: 140px">
+      <input id="eye" type="number" inputmode="decimal" step="0.1" min="0" placeholder="ex. 2" style="max-width: 140px">
     </div>
     <div class="field">
       <span class="label">Partie du Soleil visée</span>
@@ -192,8 +184,8 @@ details[open] summary { margin-bottom: 10px; }
     <details>
       <summary>Réglages avancés</summary>
       <div class="row">
-        <div class="field"><label for="temp">Température (°C)</label><input id="temp" type="number" inputmode="decimal" style="max-width: 110px"></div>
-        <div class="field"><label for="press">Pression (hPa)</label><input id="press" type="number" inputmode="decimal" style="max-width: 110px"></div>
+        <div class="field"><label for="temp">Température (°C)</label><input id="temp" type="number" inputmode="decimal" placeholder="10" style="max-width: 110px"></div>
+        <div class="field"><label for="press">Pression (hPa)</label><input id="press" type="number" inputmode="decimal" placeholder="1010" style="max-width: 110px"></div>
         <div class="field"><label for="factor">Lecture du limbe</label>
           <select id="factor" style="max-width: 260px">
             <option value="0.5">Angle double (diviser par 2)</option>
@@ -201,34 +193,6 @@ details[open] summary { margin-bottom: 10px; }
           </select></div>
       </div>
     </details>
-  </section>
-
-  <section class="card" aria-labelledby="h-pos">
-    <h2 id="h-pos">Position estimée <small>à quelques dizaines de km près</small></h2>
-    <div class="field">
-      <span class="label">Latitude</span>
-      <div class="angle nosec">
-        <span class="sp"></span>
-        <input id="latD" type="text" inputmode="decimal" aria-label="Latitude, degrés"><span class="u">°</span>
-        <input id="latM" type="text" inputmode="decimal" aria-label="Latitude, minutes"><span class="u">′</span>
-      </div>
-      <div class="seg" role="group" aria-label="Hémisphère">
-        <button type="button" data-lat="1" aria-pressed="true">N</button>
-        <button type="button" data-lat="-1" aria-pressed="false">S</button>
-      </div>
-    </div>
-    <div class="field">
-      <span class="label">Longitude</span>
-      <div class="angle nosec">
-        <span class="sp"></span>
-        <input id="lonD" type="text" inputmode="decimal" aria-label="Longitude, degrés"><span class="u">°</span>
-        <input id="lonM" type="text" inputmode="decimal" aria-label="Longitude, minutes"><span class="u">′</span>
-      </div>
-      <div class="seg" role="group" aria-label="Est ou Ouest">
-        <button type="button" data-lon="1" aria-pressed="true">E</button>
-        <button type="button" data-lon="-1" aria-pressed="false">W</button>
-      </div>
-    </div>
   </section>
 
   <section class="card" aria-labelledby="h-sights">
@@ -245,7 +209,7 @@ details[open] summary { margin-bottom: 10px; }
     <div class="actions">
       <button type="button" class="btn" id="addSight">+ Ajouter une visée</button>
     </div>
-    <p class="hint">Une visée donne une droite ; deux ou trois visées espacées d'au moins une heure donnent un vrai point.</p>
+    <p class="hint">Une visée donne une droite ; deux ou trois visées espacées d'au moins une heure donnent un vrai point. Si vous vous déplacez entre les visées, entrez pour chacune votre position estimée au moment de la visée : le point est calculé pour la dernière.</p>
   </section>
 
   <section class="card" id="result" aria-labelledby="h-res">
@@ -253,7 +217,7 @@ details[open] summary { margin-bottom: 10px; }
     <div id="resBody"></div>
   </section>
 
-  <p class="note" style="padding-bottom: 8px">Éphémérides du Soleil calculées (précision ≈ 0,6′, soit environ 1 mille). Méthode de l'intercept (Marcq Saint-Hilaire), point par moindres carrés pour plusieurs visées, observateur immobile entre les visées.</p>
+  <p class="note" style="padding-bottom: 8px">Éphémérides du Soleil calculées (précision ≈ 0,6′, soit environ 1 mille). Méthode de l'intercept (Marcq Saint-Hilaire), point par moindres carrés pour plusieurs visées, en supposant la même erreur d'estime pour toutes les visées.</p>
 </main>
 
 <div class="bar" role="status" aria-live="polite">
@@ -301,11 +265,18 @@ function trueAltitude(hs, { eyeHeight = 0, limb = "inf", temp = 10, pressure = 1
   return { ho: ha - refr / 60 + corrSd + 0.0024, dip: dip * 60, refr, sd: corrSd * 60 };
 }
 
-function computeFix({ sights, zero = 0, factor = 0.5, artificial = false,
-                      eyeHeight = 2, limb = "inf", temp = 10, pressure = 1010, latE, lonE }) {
+// Chaque visée porte sa lecture, son zéro, son heure et sa position estimée (latE, lonE).
+// Si les positions estimées diffèrent (déplacement entre les visées), on suppose que
+// l'erreur de l'estime (écart entre position vraie et position estimée) est la même
+// pour toutes les visées : c'est elle qu'on cherche, et le point est donné au moment
+// de la dernière visée.
+function computeFix({ sights, factor = 0.5, artificial = false,
+                      eyeHeight = 2, limb = "inf", temp = 10, pressure = 1010 }) {
   if (artificial) eyeHeight = 0;
+  sights = sights.slice().sort((a, b) => a.date - b.date);
   const lines = sights.map(s => {
-    const hs = (s.reading - zero) * factor;
+    const latE = s.latE, lonE = s.lonE;
+    const hs = (s.reading - s.zero) * factor;
     const t = trueAltitude(hs, { eyeHeight, limb, temp, pressure });
     const { gha, dec } = sunGhaDec(s.date);
     const lha = mod(gha + lonE, 360);
@@ -313,7 +284,7 @@ function computeFix({ sights, zero = 0, factor = 0.5, artificial = false,
     const hc = Math.asin(Math.sin(phi) * Math.sin(d) + Math.cos(phi) * Math.cos(d) * Math.cos(h)) * R2D;
     const zn = mod(Math.atan2(-Math.cos(d) * Math.sin(h),
                Math.cos(phi) * Math.sin(d) - Math.sin(phi) * Math.cos(d) * Math.cos(h)) * R2D, 360);
-    return { date: s.date, reading: s.reading, hs, ho: t.ho, hc, intercept: (t.ho - hc) * 60, azimuth: zn, gha, dec, lha, corr: t };
+    return { date: s.date, reading: s.reading, zero: s.zero, latE, lonE, hs, ho: t.ho, hc, intercept: (t.ho - hc) * 60, azimuth: zn, gha, dec, lha, corr: t };
   });
   let dLat, dLon;
   if (lines.length === 1) {
@@ -329,7 +300,9 @@ function computeFix({ sights, zero = 0, factor = 0.5, artificial = false,
     if (Math.abs(det) < 1e-6) return { error: "Les droites de hauteur sont presque parallèles : espacez davantage vos visées (azimuts différents d'au moins 30°)." , lines};
     dLat = (c * p - b * q) / det; dLon = (a * q - b * p) / det;
   }
-  return { lat: latE + dLat / 60, lon: lonE + dLon / 60 / Math.cos(latE * D2R), dLat, dLon, lines };
+  const ref = lines[lines.length - 1];
+  const moved = lines.some(l => Math.abs(l.latE - ref.latE) > 1e-9 || Math.abs(l.lonE - ref.lonE) > 1e-9);
+  return { lat: ref.latE + dLat / 60, lon: ref.lonE + dLon / 60 / Math.cos(ref.latE * D2R), dLat, dLon, lines, ref, moved };
 }
 
 function formatDM(x, type) {
@@ -342,18 +315,13 @@ function formatDM(x, type) {
 
 
 const $ = id => document.getElementById(id);
-const KEY = "point-soleil-v1";
-const EXAMPLE = {
-  zeroSign: 1, zeroD: "0", zeroM: "8.0", artificial: true, eye: "2", limb: "centre",
-  temp: "10", press: "1010", factor: "0.5",
-  latD: "46", latM: "14.2", latH: 1, lonD: "7", lonM: "21.2", lonH: 1,
-  tz: "utc",
-  sights: [{ d: "61", m: "30.5", s: "", date: "2026-10-27", time: "11:38:15" }],
-  example: true
-};
+const KEY = "point-soleil-v2";
+const emptySight = () => ({ d: "", m: "", s: "", zSign: "1", zD: "", zM: "", date: "", time: "",
+  latD: "", latM: "", latH: "1", lonD: "", lonM: "", lonH: "1" });
+const DEFAULT = { artificial: true, eye: "", limb: "centre", temp: "", press: "", factor: "0.5", tz: "local", sights: [emptySight()] };
 let state;
 try { state = JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { state = null; }
-if (!state || !Array.isArray(state.sights)) state = JSON.parse(JSON.stringify(EXAMPLE));
+if (!state || !Array.isArray(state.sights) || !state.sights.length) state = JSON.parse(JSON.stringify(DEFAULT));
 
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 const num = v => { const x = parseFloat(String(v ?? "").replace(",", ".")); return isFinite(x) ? x : NaN; };
@@ -365,34 +333,28 @@ const dmToDeg = (d, m, s) => {
 const pad = n => String(n).padStart(2, "0");
 
 /* ---------- liaison des champs ---------- */
-const simple = ["zeroD", "zeroM", "eye", "temp", "press", "latD", "latM", "lonD", "lonM"];
+const simple = ["eye", "temp", "press"];
 function bindFields() {
   simple.forEach(k => { const el = $(k); el.value = state[k] ?? ""; el.addEventListener("input", () => { state[k] = el.value; touched(); }); });
-  $("zeroSign").value = String(state.zeroSign); $("zeroSign").addEventListener("change", e => { state.zeroSign = +e.target.value; touched(); });
   $("factor").value = state.factor; $("factor").addEventListener("change", e => { state.factor = e.target.value; touched(); });
   $("hzSea").addEventListener("click", () => { state.artificial = false; touched(); });
   $("hzArt").addEventListener("click", () => { state.artificial = true; touched(); });
   document.querySelectorAll("[data-limb]").forEach(b => b.addEventListener("click", () => { state.limb = b.dataset.limb; touched(); }));
-  document.querySelectorAll("[data-lat]").forEach(b => b.addEventListener("click", () => { state.latH = +b.dataset.lat; touched(); }));
-  document.querySelectorAll("[data-lon]").forEach(b => b.addEventListener("click", () => { state.lonH = +b.dataset.lon; touched(); }));
   $("tzLocal").addEventListener("click", () => switchTz("local"));
   $("tzUtc").addEventListener("click", () => switchTz("utc"));
   $("addSight").addEventListener("click", () => {
-    const now = new Date();
-    state.sights.push({ d: "", m: "", s: "", ...dateParts(now, state.tz) });
+    state.sights.push(emptySight());
     renderSights(); touched();
     const ins = document.querySelectorAll(".sight input[data-k='d']"); ins[ins.length - 1]?.focus();
   });
 }
-function touched() { state.example = false; save(); syncToggles(); compute(); }
+function touched() { save(); syncToggles(); compute(); }
 
 function syncToggles() {
   $("hzSea").setAttribute("aria-pressed", String(!state.artificial));
   $("hzArt").setAttribute("aria-pressed", String(!!state.artificial));
   $("eyeWrap").hidden = !!state.artificial;
   document.querySelectorAll("[data-limb]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.limb === state.limb)));
-  document.querySelectorAll("[data-lat]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.lat === state.latH)));
-  document.querySelectorAll("[data-lon]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.lon === state.lonH)));
   $("tzLocal").setAttribute("aria-pressed", String(state.tz === "local"));
   $("tzUtc").setAttribute("aria-pressed", String(state.tz === "utc"));
   const off = -new Date().getTimezoneOffset() / 60;
@@ -405,7 +367,6 @@ function syncToggles() {
     sup: state.artificial ? "Disques bord à bord (haut du Soleil sur le bas du reflet) : −16′." : "Bord supérieur posé sur l'horizon : −16′."
   };
   $("limbHint").textContent = hints[state.limb];
-  $("exampleTag").hidden = !state.example;
 }
 
 /* ---------- heures ---------- */
@@ -434,22 +395,45 @@ function renderSights() {
       <div class="sight-head"><span class="n">Visée ${i + 1}</span>
         <div class="actions">
           <button type="button" class="btn small" data-act="now">Heure actuelle</button>
+          ${i > 0 ? `<button type="button" class="btn small" data-act="copy">Zéro et position précédents</button>` : ""}
           ${state.sights.length > 1 ? `<button type="button" class="btn small ghost" data-act="del" aria-label="Supprimer la visée ${i + 1}">Supprimer</button>` : ""}
         </div></div>
       <div class="field"><span class="label">Lecture brute du sextant</span>
         <div class="angle">
           <span class="sp"></span>
-          <input type="text" inputmode="decimal" data-k="d" id="s${i}d" aria-label="Visée ${i + 1}, degrés"><span class="u">°</span>
-          <input type="text" inputmode="decimal" data-k="m" id="s${i}m" aria-label="Visée ${i + 1}, minutes"><span class="u">′</span>
-          <input type="text" inputmode="decimal" data-k="s" id="s${i}s" placeholder="0" aria-label="Visée ${i + 1}, secondes"><span class="u">″</span>
+          <input type="text" inputmode="decimal" data-k="d" id="s${i}d" aria-label="Visée ${i + 1}, lecture, degrés"><span class="u">°</span>
+          <input type="text" inputmode="decimal" data-k="m" id="s${i}m" aria-label="Visée ${i + 1}, lecture, minutes"><span class="u">′</span>
+          <input type="text" inputmode="decimal" data-k="s" id="s${i}s" aria-label="Visée ${i + 1}, lecture, secondes"><span class="u">″</span>
+        </div></div>
+      <div class="field"><span class="label">Zéro de l'instrument (lecture en visant la hauteur 0)</span>
+        <div class="angle nosec">
+          <select data-k="zSign" id="s${i}zs" aria-label="Visée ${i + 1}, signe du zéro"><option value="1">+</option><option value="-1">−</option></select>
+          <input type="text" inputmode="decimal" data-k="zD" id="s${i}zd" placeholder="0" aria-label="Visée ${i + 1}, zéro, degrés"><span class="u">°</span>
+          <input type="text" inputmode="decimal" data-k="zM" id="s${i}zm" placeholder="0" aria-label="Visée ${i + 1}, zéro, minutes"><span class="u">′</span>
         </div></div>
       <div class="grid2">
         <div class="field"><label for="s${i}date">Date</label><input type="date" data-k="date" id="s${i}date"></div>
         <div class="field"><label for="s${i}time">Heure (h:min:s)</label><input type="time" step="1" data-k="time" id="s${i}time"></div>
-      </div>`;
-    el.querySelectorAll("input[data-k]").forEach(inp => {
+      </div>
+      <div class="field"><span class="label">Position estimée au moment de la visée</span>
+        <div class="angle nosec">
+          <select data-k="latH" id="s${i}lath" aria-label="Visée ${i + 1}, Nord ou Sud"><option value="1">N</option><option value="-1">S</option></select>
+          <input type="text" inputmode="decimal" data-k="latD" id="s${i}latd" aria-label="Visée ${i + 1}, latitude, degrés"><span class="u">°</span>
+          <input type="text" inputmode="decimal" data-k="latM" id="s${i}latm" aria-label="Visée ${i + 1}, latitude, minutes"><span class="u">′</span>
+        </div>
+        <div class="angle nosec">
+          <select data-k="lonH" id="s${i}lonh" aria-label="Visée ${i + 1}, Est ou Ouest"><option value="1">E</option><option value="-1">W</option></select>
+          <input type="text" inputmode="decimal" data-k="lonD" id="s${i}lond" aria-label="Visée ${i + 1}, longitude, degrés"><span class="u">°</span>
+          <input type="text" inputmode="decimal" data-k="lonM" id="s${i}lonm" aria-label="Visée ${i + 1}, longitude, minutes"><span class="u">′</span>
+        </div></div>`;
+    el.querySelectorAll("[data-k]").forEach(inp => {
       inp.value = s[inp.dataset.k] ?? "";
-      inp.addEventListener("input", () => { s[inp.dataset.k] = inp.value; touched(); });
+      inp.addEventListener(inp.tagName === "SELECT" ? "change" : "input", () => { s[inp.dataset.k] = inp.value; touched(); });
+    });
+    el.querySelector("[data-act='copy']")?.addEventListener("click", () => {
+      const p = state.sights[i - 1];
+      ["zSign", "zD", "zM", "latD", "latM", "latH", "lonD", "lonM", "lonH"].forEach(k => s[k] = p[k]);
+      renderSights(); touched();
     });
     el.querySelector("[data-act='now']").addEventListener("click", () => { Object.assign(s, dateParts(new Date(), state.tz)); renderSights(); touched(); });
     el.querySelector("[data-act='del']")?.addEventListener("click", () => { state.sights.splice(i, 1); renderSights(); touched(); });
@@ -464,23 +448,33 @@ function degToDMs(x) { const a = Math.abs(x), d = Math.floor(a), m = (a - d) * 6
 
 function compute() {
   const res = $("resBody");
-  const zero = state.zeroSign * (dmToDeg(state.zeroD, state.zeroM) || 0);
-  const latE = state.latH * dmToDeg(state.latD, state.latM);
-  const lonE = state.lonH * dmToDeg(state.lonD, state.lonM);
-  const sights = state.sights.map(s => ({ reading: dmToDeg(s.d, s.m, s.s), date: toDate(s, state.tz) }))
-                             .filter(s => isFinite(s.reading) && s.reading > 0 && s.date);
   const problems = [];
-  if (!isFinite(latE) || Math.abs(latE) > 89) problems.push("Latitude estimée manquante ou invalide.");
-  if (!isFinite(lonE) || Math.abs(lonE) > 180) problems.push("Longitude estimée manquante ou invalide.");
-  if (!sights.length) problems.push("Saisissez au moins une visée complète : lecture, date et heure.");
-  if (problems.length) {
-    res.innerHTML = problems.map(p => `<p class="error">${p}</p>`).join("");
+  const sights = [];
+  state.sights.forEach((s, i) => {
+    const reading = dmToDeg(s.d, s.m, s.s), date = toDate(s, state.tz);
+    const filled = [s.d, s.m, s.date, s.time, s.latD, s.lonD].some(v => String(v || "").trim());
+    if (!filled) return;
+    const miss = [];
+    if (!(isFinite(reading) && reading > 0)) miss.push("lecture");
+    if (!date) miss.push("date et heure");
+    const latE = (+s.latH || 1) * dmToDeg(s.latD, s.latM), lonE = (+s.lonH || 1) * dmToDeg(s.lonD, s.lonM);
+    if (!isFinite(latE) || Math.abs(latE) > 89) miss.push("latitude");
+    if (!isFinite(lonE) || Math.abs(lonE) > 180) miss.push("longitude");
+    if (miss.length) { problems.push(`Visée ${i + 1} : ${miss.join(", ")} manquante(s) ou invalide(s).`); return; }
+    sights.push({ reading, date, latE, lonE, zero: (+s.zSign || 1) * (dmToDeg(s.zD, s.zM) || 0) });
+  });
+  if (!state.artificial && !isFinite(num(state.eye))) problems.push("Horizon de mer : indiquez la hauteur de l'œil.");
+  if (!sights.length && !problems.length) problems.push("Saisissez une visée : lecture, zéro, date, heure et position estimée.");
+  const blocking = !sights.length || (!state.artificial && !isFinite(num(state.eye)));
+  const warnHtml = problems.map(p => `<p class="error">${p}</p>`).join("");
+  if (blocking) {
+    res.innerHTML = warnHtml;
     $("barPos").innerHTML = `—<small>${problems[0]}</small>`;
     return;
   }
-  const r = computeFix({ sights, zero, factor: +state.factor, artificial: !!state.artificial,
+  const r = computeFix({ sights, factor: +state.factor, artificial: !!state.artificial,
     eyeHeight: num(state.eye) || 0, limb: state.limb, temp: isFinite(num(state.temp)) ? num(state.temp) : 10,
-    pressure: num(state.press) || 1010, latE, lonE });
+    pressure: num(state.press) || 1010 });
   if (r.error) { res.innerHTML = `<p class="error">${r.error}</p>` + table(r.lines); $("barPos").innerHTML = `—<small>Droites presque parallèles</small>`; return; }
 
   const worst = Math.max(...r.lines.map(l => Math.abs(l.intercept)));
@@ -490,9 +484,10 @@ function compute() {
                 : s === "warn" ? `À vérifier : intercept ${worst.toFixed(1)} M`
                 : `Erreur probable : intercept ${worst.toFixed(1)} M`;
   const advice = s === "ok" ? "" : `<p class="note">Un intercept élevé vient presque toujours d'une saisie : heure (UTC ou locale ?), zéro, partie du Soleil visée (centre ou bord), horizon, ou position estimée trop éloignée. Avec un horizon artificiel et le Soleil superposé à son reflet, choisissez « Centre ».</p>`;
+  const movedNote = r.moved ? `<p class="note">Positions estimées différentes selon les visées : point calculé pour le moment de la dernière visée (${pad(r.ref.date.getUTCHours())}:${pad(r.ref.date.getUTCMinutes())} UTC), en supposant la même erreur d'estime pour toutes.</p>` : "";
   const one = r.lines.length === 1 ? `<p class="note">Une seule visée : le point est le plus proche de votre position estimée sur la droite de hauteur. Il est fiable dans la direction du Soleil (azimut ${r.lines[0].azimuth.toFixed(0)}°) seulement.</p>` : "";
   const latLon = `${r.lat.toFixed(5)}, ${r.lon.toFixed(5)}`;
-  res.innerHTML = `
+  res.innerHTML = (warnHtml ? warnHtml + `<p class="note">Résultat calculé sans ces visées.</p>` : "") + `
     <div class="fix">
       <div class="pos">${formatDM(r.lat, "lat")}<br>${formatDM(r.lon, "lon")}</div>
       <div class="dec">${latLon}</div>
@@ -503,7 +498,7 @@ function compute() {
         <button type="button" class="btn small" id="copyBtn">Copier les coordonnées</button>
         <a class="btn small" style="text-decoration:none" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat=${r.lat.toFixed(5)}&mlon=${r.lon.toFixed(5)}#map=12/${r.lat.toFixed(5)}/${r.lon.toFixed(5)}">Voir sur la carte</a>
       </div>
-      ${one}${advice}
+      ${one}${movedNote}${advice}
       ${lowSun ? `<p class="note">Soleil à moins de 10° de hauteur : la réfraction est incertaine, renseignez température et pression.</p>` : ""}
     </div>
     ${plot(r)}
@@ -519,10 +514,10 @@ function compute() {
 
 function table(lines) {
   return `<div class="table-wrap"><table>
-    <thead><tr><th>Heure UTC</th><th>Lecture</th><th>Hs</th><th>Ho</th><th>Hc</th><th>Intercept</th><th>Azimut</th></tr></thead>
+    <thead><tr><th>Heure UTC</th><th>Lecture</th><th>Zéro</th><th>Hs</th><th>Ho</th><th>Hc</th><th>Intercept</th><th>Azimut</th></tr></thead>
     <tbody>${lines.map(l => `<tr>
       <td>${pad(l.date.getUTCHours())}:${pad(l.date.getUTCMinutes())}:${pad(l.date.getUTCSeconds())}</td>
-      <td>${degToDMs(l.reading)}</td><td>${degToDMs(l.hs)}</td><td>${degToDMs(l.ho)}</td><td>${degToDMs(l.hc)}</td>
+      <td>${degToDMs(l.reading)}</td><td>${l.zero < 0 ? "−" : ""}${degToDMs(l.zero)}</td><td>${degToDMs(l.hs)}</td><td>${degToDMs(l.ho)}</td><td>${degToDMs(l.hc)}</td>
       <td class="int-${sev(l.intercept)}">${l.intercept >= 0 ? "+" : "−"}${Math.abs(l.intercept).toFixed(1)} M</td>
       <td>${l.azimuth.toFixed(1)}°</td></tr>`).join("")}</tbody></table></div>
     <p class="note">Hs : lecture − zéro, ÷ 2. Ho : Hs corrigée (réfraction, demi-diamètre, horizon). Hc : hauteur attendue à la position estimée. Intercept = Ho − Hc en milles nautiques (1 M = 1,852 km) ; positif = vers le Soleil.</p>`;
@@ -554,7 +549,7 @@ function plot(r) {
     <circle cx="${X(r.dLon)}" cy="${Y(r.dLat)}" r="6" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>
     <text x="${S - 12}" y="22" text-anchor="end">N ↑</text>
     <text x="14" y="${S - 14}">quadrillage ${nice} M</text>
-    <text x="${X(0) + 7}" y="${Y(0) - 7}">estimée</text>
+    <text x="${X(0) + 7}" y="${Y(0) - 7}">${r.moved ? "estime" : "estimée"}</text>
   </svg>
   <p class="note" style="text-align:center">Trait bleu : droite de hauteur. Point cuivre : position calculée. Cercle : position estimée.</p>`;
 }
