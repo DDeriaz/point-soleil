@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14212b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Point Soleil">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Point Soleil</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+</head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout : une colonne étroite façon carnet de bord, barre de position collée en bas de l'écran */
+:root {
+  --bg: #eef2f1;
+  --surface: #ffffff;
+  --ink: #14212b;
+  --muted: #5a6a72;
+  --line: #d3dcdd;
+  --field: #f7f9f8;
+  --accent: #9a5a12;
+  --accent-ink: #ffffff;
+  --sea: #1c5a78;
+  --ok: #2f7a4a;
+  --warn: #a8670a;
+  --bad: #b3362b;
+  --ok-bg: #e2f1e7;
+  --warn-bg: #fbeed5;
+  --bad-bg: #f8e1de;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d151a; --surface: #142028; --ink: #e3eaec; --muted: #90a2a9; --line: #253540; --field: #0f1a21;
+    --accent: #d99a4c; --accent-ink: #1a1206; --sea: #72b6d4;
+    --ok: #6cc88f; --warn: #e2a843; --bad: #ef7b6f; --ok-bg: #16301f; --warn-bg: #33270f; --bad-bg: #3a1a17;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d151a; --surface: #142028; --ink: #e3eaec; --muted: #90a2a9; --line: #253540; --field: #0f1a21;
+  --accent: #d99a4c; --accent-ink: #1a1206; --sea: #72b6d4;
+  --ok: #6cc88f; --warn: #e2a843; --bad: #ef7b6f; --ok-bg: #16301f; --warn-bg: #33270f; --bad-bg: #3a1a17;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 15px/1.45 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 96px;
+  -webkit-text-size-adjust: 100%;
+}
+main { max-width: 620px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+header.top { padding-block: 22px 6px; display: grid; gap: 4px; }
+h1 { font: 600 30px/1.05 var(--font-display); letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+h1 .mark { color: var(--accent); }
+.lede { color: var(--muted); margin: 0; max-width: 60ch; }
+
+section.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
+#resBody { display: grid; gap: 12px; min-width: 0; }
+h2 { font: 600 13px/1.2 var(--font-display); text-transform: uppercase; letter-spacing: 0.09em; color: var(--sea); margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+h2 small { font: 400 12px var(--font-body); text-transform: none; letter-spacing: 0; color: var(--muted); }
+
+.row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field > label, .label { font-size: 12px; color: var(--muted); font-weight: 500; }
+input, select, button { font: inherit; color: inherit; }
+input[type="text"], input[type="number"], input[type="date"], input[type="time"], select {
+  background: var(--field); border: 1px solid var(--line); border-radius: 7px;
+  padding: 9px 10px; min-height: 42px; width: 100%; font-family: var(--font-data); font-size: 16px;
+}
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* saisie d'angle : degrés / minutes / secondes */
+.angle { display: grid; grid-template-columns: auto 1fr auto 1.2fr auto 1fr auto; align-items: center; gap: 4px; }
+.angle.nosec { grid-template-columns: auto 1fr auto 1.4fr auto; }
+.angle input { text-align: right; padding-inline: 8px; min-width: 0; }
+.angle .u { font-family: var(--font-data); color: var(--muted); font-size: 15px; }
+.angle select { width: auto; padding-inline: 6px; }
+.angle .sp { width: 0; }
+
+.seg { justify-self: start; max-width: 100%; display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--field); }
+.seg button { border: 0; background: transparent; padding: 9px 12px; min-height: 40px; cursor: pointer; color: var(--muted); font-size: 14px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--sea); color: var(--surface); font-weight: 600; }
+
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+.hint b { color: var(--ink); font-weight: 600; }
+
+/* visées */
+.sights { display: grid; gap: 10px; }
+.sight { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: grid; gap: 10px; background: var(--field); }
+.sight-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sight-head .n { font: 600 13px var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+.sight .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sight .grid2 input { min-width: 0; padding-inline: 8px; }
+.sight input { background: var(--surface); }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 9px 12px; min-height: 40px; cursor: pointer; font-size: 14px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.ghost { background: transparent; color: var(--muted); }
+.btn.small { min-height: 34px; padding: 6px 10px; font-size: 13px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* résultat */
+.fix { display: grid; gap: 6px; }
+.fix .pos { font: 500 clamp(24px, 7.2vw, 32px)/1.15 var(--font-data); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.fix .dec { font: 14px var(--font-data); color: var(--muted); font-variant-numeric: tabular-nums; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+.pill.bad { background: var(--bad-bg); color: var(--bad); }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.error { color: var(--bad); font-weight: 500; margin: 0; }
+
+.plot { width: 100%; max-width: 420px; aspect-ratio: 1; justify-self: center; }
+.plot text { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font: 13px var(--font-data); font-variant-numeric: tabular-nums; }
+th, td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font: 600 11px var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+th:first-child, td:first-child { text-align: left; }
+td.int-ok { color: var(--ok); } td.int-warn { color: var(--warn); } td.int-bad { color: var(--bad); font-weight: 600; }
+
+details summary { cursor: pointer; color: var(--sea); font-weight: 500; font-size: 14px; }
+details[open] summary { margin-bottom: 10px; }
+
+/* barre de position en bas */
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  background: var(--ink); color: var(--bg);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.bar-in { max-width: 620px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.bar .p { font: 500 16px var(--font-data); font-variant-numeric: tabular-nums; min-width: 0; }
+.bar .p small { display: block; font: 12px var(--font-body); opacity: 0.7; }
+.bar a { color: var(--bg); font-size: 13px; white-space: nowrap; border: 1px solid currentColor; border-radius: 7px; padding: 6px 10px; text-decoration: none; opacity: 0.9; }
+.example { font-size: 12px; font-weight: 600; color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<main>
+  <header class="top">
+    <h1>Point <span class="mark">Soleil</span></h1>
+    <p class="lede">Hauteur du Soleil au sextant → latitude et longitude. Saisissez la lecture brute : le zéro et la division par deux sont appliqués automatiquement.</p>
+    <span class="example" id="exampleTag">Exemple chargé : visée du 27 octobre 2026 à Sion. Remplacez par vos mesures.</span>
+  </header>
+
+  <section class="card" aria-labelledby="h-inst">
+    <h2 id="h-inst">Instrument</h2>
+    <div class="field">
+      <span class="label">Zéro de l'instrument (lecture en visant la hauteur 0)</span>
+      <div class="angle nosec">
+        <select id="zeroSign" aria-label="Signe du zéro"><option value="1">+</option><option value="-1">−</option></select>
+        <input id="zeroD" type="text" inputmode="decimal" aria-label="Zéro, degrés"><span class="u">°</span>
+        <input id="zeroM" type="text" inputmode="decimal" aria-label="Zéro, minutes"><span class="u">′</span>
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">Horizon</span>
+      <div class="seg" role="group" aria-label="Horizon">
+        <button type="button" id="hzSea" aria-pressed="false">Horizon de mer</button>
+        <button type="button" id="hzArt" aria-pressed="true">Horizon artificiel</button>
+      </div>
+    </div>
+    <div class="field" id="eyeWrap">
+      <label for="eye">Hauteur de l'œil au-dessus de l'eau (m)</label>
+      <input id="eye" type="number" inputmode="decimal" step="0.1" min="0" style="max-width: 140px">
+    </div>
+    <div class="field">
+      <span class="label">Partie du Soleil visée</span>
+      <div class="seg" role="group" aria-label="Partie du Soleil visée">
+        <button type="button" data-limb="inf" aria-pressed="false">Bord inf.</button>
+        <button type="button" data-limb="centre" aria-pressed="true">Centre</button>
+        <button type="button" data-limb="sup" aria-pressed="false">Bord sup.</button>
+      </div>
+      <p class="hint" id="limbHint"></p>
+    </div>
+    <details>
+      <summary>Réglages avancés</summary>
+      <div class="row">
+        <div class="field"><label for="temp">Température (°C)</label><input id="temp" type="number" inputmode="decimal" style="max-width: 110px"></div>
+        <div class="field"><label for="press">Pression (hPa)</label><input id="press" type="number" inputmode="decimal" style="max-width: 110px"></div>
+        <div class="field"><label for="factor">Lecture du limbe</label>
+          <select id="factor" style="max-width: 260px">
+            <option value="0.5">Angle double (diviser par 2)</option>
+            <option value="1">Hauteur directe (ne pas diviser)</option>
+          </select></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="h-pos">
+    <h2 id="h-pos">Position estimée <small>à quelques dizaines de km près</small></h2>
+    <div class="field">
+      <span class="label">Latitude</span>
+      <div class="angle nosec">
+        <span class="sp"></span>
+        <input id="latD" type="text" inputmode="decimal" aria-label="Latitude, degrés"><span class="u">°</span>
+        <input id="latM" type="text" inputmode="decimal" aria-label="Latitude, minutes"><span class="u">′</span>
+      </div>
+      <div class="seg" role="group" aria-label="Hémisphère">
+        <button type="button" data-lat="1" aria-pressed="true">N</button>
+        <button type="button" data-lat="-1" aria-pressed="false">S</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">Longitude</span>
+      <div class="angle nosec">
+        <span class="sp"></span>
+        <input id="lonD" type="text" inputmode="decimal" aria-label="Longitude, degrés"><span class="u">°</span>
+        <input id="lonM" type="text" inputmode="decimal" aria-label="Longitude, minutes"><span class="u">′</span>
+      </div>
+      <div class="seg" role="group" aria-label="Est ou Ouest">
+        <button type="button" data-lon="1" aria-pressed="true">E</button>
+        <button type="button" data-lon="-1" aria-pressed="false">W</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-sights">
+    <h2 id="h-sights">Visées</h2>
+    <div class="field">
+      <span class="label">Heures saisies en</span>
+      <div class="seg" role="group" aria-label="Fuseau des heures saisies">
+        <button type="button" id="tzLocal" aria-pressed="true">Heure du téléphone</button>
+        <button type="button" id="tzUtc" aria-pressed="false">UTC</button>
+      </div>
+      <p class="hint" id="tzHint"></p>
+    </div>
+    <div class="sights" id="sights"></div>
+    <div class="actions">
+      <button type="button" class="btn" id="addSight">+ Ajouter une visée</button>
+    </div>
+    <p class="hint">Une visée donne une droite ; deux ou trois visées espacées d'au moins une heure donnent un vrai point.</p>
+  </section>
+
+  <section class="card" id="result" aria-labelledby="h-res">
+    <h2 id="h-res">Résultat</h2>
+    <div id="resBody"></div>
+  </section>
+
+  <p class="note" style="padding-bottom: 8px">Éphémérides du Soleil calculées (précision ≈ 0,6′, soit environ 1 mille). Méthode de l'intercept (Marcq Saint-Hilaire), point par moindres carrés pour plusieurs visées, observateur immobile entre les visées.</p>
+</main>
+
+<div class="bar" role="status" aria-live="polite">
+  <div class="bar-in">
+    <div class="p" id="barPos">—<small>Saisissez une visée</small></div>
+    <a href="#result">Détails</a>
+  </div>
+</div>
+
+<script>
+// Calculs du point au Soleil — traduction de point_astro.R
+const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+const mod = (a, n) => ((a % n) + n) % n;
+
+function parseAngle(s) {
+  if (typeof s === "number") return s;
+  s = String(s || "").trim().replace(/,/g, ".");
+  if (!s) return NaN;
+  const neg = /^-/.test(s) || /[WSO]\s*$/i.test(s);
+  const nums = (s.match(/[0-9]+(?:\.[0-9]*)?/g) || []).map(Number);
+  if (nums.length === 0 || nums.length > 3) return NaN;
+  const v = nums[0] + (nums[1] || 0) / 60 + (nums[2] || 0) / 3600;
+  return neg ? -v : v;
+}
+
+function sunGhaDec(date) {
+  const n = date.getTime() / 86400000 + 2440587.5 - 2451545.0;
+  const L = mod(280.460 + 0.9856474 * n, 360);
+  const g = mod(357.528 + 0.9856003 * n, 360) * D2R;
+  const lambda = (L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * D2R;
+  const eps = (23.439 - 0.0000004 * n) * D2R;
+  const ra = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda));
+  const dec = Math.asin(Math.sin(eps) * Math.sin(lambda));
+  const gmst = mod(18.697374558 + 24.06570982441908 * n, 24);
+  return { gha: mod(gmst * 15 - ra * R2D, 360), dec: dec * R2D };
+}
+
+function trueAltitude(hs, { eyeHeight = 0, limb = "inf", temp = 10, pressure = 1010 } = {}) {
+  const dip = 1.76 * Math.sqrt(Math.max(eyeHeight, 0)) / 60;
+  const ha = hs - dip;
+  let refr = 1 / Math.tan((ha + 7.31 / (ha + 4.4)) * D2R);
+  refr *= (pressure / 1010) * (283 / (273 + temp));
+  const sd = 16 / 60;
+  const corrSd = limb === "inf" ? sd : limb === "sup" ? -sd : 0;
+  return { ho: ha - refr / 60 + corrSd + 0.0024, dip: dip * 60, refr, sd: corrSd * 60 };
+}
+
+function computeFix({ sights, zero = 0, factor = 0.5, artificial = false,
+                      eyeHeight = 2, limb = "inf", temp = 10, pressure = 1010, latE, lonE }) {
+  if (artificial) eyeHeight = 0;
+  const lines = sights.map(s => {
+    const hs = (s.reading - zero) * factor;
+    const t = trueAltitude(hs, { eyeHeight, limb, temp, pressure });
+    const { gha, dec } = sunGhaDec(s.date);
+    const lha = mod(gha + lonE, 360);
+    const phi = latE * D2R, d = dec * D2R, h = lha * D2R;
+    const hc = Math.asin(Math.sin(phi) * Math.sin(d) + Math.cos(phi) * Math.cos(d) * Math.cos(h)) * R2D;
+    const zn = mod(Math.atan2(-Math.cos(d) * Math.sin(h),
+               Math.cos(phi) * Math.sin(d) - Math.sin(phi) * Math.cos(d) * Math.cos(h)) * R2D, 360);
+    return { date: s.date, reading: s.reading, hs, ho: t.ho, hc, intercept: (t.ho - hc) * 60, azimuth: zn, gha, dec, lha, corr: t };
+  });
+  let dLat, dLon;
+  if (lines.length === 1) {
+    const z = lines[0].azimuth * D2R;
+    dLat = lines[0].intercept * Math.cos(z); dLon = lines[0].intercept * Math.sin(z);
+  } else {
+    let a = 0, b = 0, c = 0, p = 0, q = 0;
+    for (const l of lines) {
+      const cz = Math.cos(l.azimuth * D2R), sz = Math.sin(l.azimuth * D2R);
+      a += cz * cz; b += cz * sz; c += sz * sz; p += cz * l.intercept; q += sz * l.intercept;
+    }
+    const det = a * c - b * b;
+    if (Math.abs(det) < 1e-6) return { error: "Les droites de hauteur sont presque parallèles : espacez davantage vos visées (azimuts différents d'au moins 30°)." , lines};
+    dLat = (c * p - b * q) / det; dLon = (a * q - b * p) / det;
+  }
+  return { lat: latE + dLat / 60, lon: lonE + dLon / 60 / Math.cos(latE * D2R), dLat, dLon, lines };
+}
+
+function formatDM(x, type) {
+  const hemi = type === "lat" ? (x >= 0 ? "N" : "S") : (x >= 0 ? "E" : "W");
+  x = Math.abs(x);
+  let deg = Math.floor(x), min = (x - deg) * 60;
+  if (min >= 59.995) { deg += 1; min = 0; }
+  return `${deg}°${min.toFixed(2).padStart(5, "0")}′ ${hemi}`;
+}
+
+
+const $ = id => document.getElementById(id);
+const KEY = "point-soleil-v1";
+const EXAMPLE = {
+  zeroSign: 1, zeroD: "0", zeroM: "8.0", artificial: true, eye: "2", limb: "centre",
+  temp: "10", press: "1010", factor: "0.5",
+  latD: "46", latM: "14.2", latH: 1, lonD: "7", lonM: "21.2", lonH: 1,
+  tz: "utc",
+  sights: [{ d: "61", m: "30.5", s: "", date: "2026-10-27", time: "11:38:15" }],
+  example: true
+};
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { state = null; }
+if (!state || !Array.isArray(state.sights)) state = JSON.parse(JSON.stringify(EXAMPLE));
+
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+const num = v => { const x = parseFloat(String(v ?? "").replace(",", ".")); return isFinite(x) ? x : NaN; };
+const dmToDeg = (d, m, s) => {
+  const D = num(d), M = num(m) || 0, S = num(s) || 0;
+  if (!isFinite(D) && !isFinite(num(m))) return NaN;
+  return Math.abs(isFinite(D) ? D : 0) + M / 60 + S / 3600;
+};
+const pad = n => String(n).padStart(2, "0");
+
+/* ---------- liaison des champs ---------- */
+const simple = ["zeroD", "zeroM", "eye", "temp", "press", "latD", "latM", "lonD", "lonM"];
+function bindFields() {
+  simple.forEach(k => { const el = $(k); el.value = state[k] ?? ""; el.addEventListener("input", () => { state[k] = el.value; touched(); }); });
+  $("zeroSign").value = String(state.zeroSign); $("zeroSign").addEventListener("change", e => { state.zeroSign = +e.target.value; touched(); });
+  $("factor").value = state.factor; $("factor").addEventListener("change", e => { state.factor = e.target.value; touched(); });
+  $("hzSea").addEventListener("click", () => { state.artificial = false; touched(); });
+  $("hzArt").addEventListener("click", () => { state.artificial = true; touched(); });
+  document.querySelectorAll("[data-limb]").forEach(b => b.addEventListener("click", () => { state.limb = b.dataset.limb; touched(); }));
+  document.querySelectorAll("[data-lat]").forEach(b => b.addEventListener("click", () => { state.latH = +b.dataset.lat; touched(); }));
+  document.querySelectorAll("[data-lon]").forEach(b => b.addEventListener("click", () => { state.lonH = +b.dataset.lon; touched(); }));
+  $("tzLocal").addEventListener("click", () => switchTz("local"));
+  $("tzUtc").addEventListener("click", () => switchTz("utc"));
+  $("addSight").addEventListener("click", () => {
+    const now = new Date();
+    state.sights.push({ d: "", m: "", s: "", ...dateParts(now, state.tz) });
+    renderSights(); touched();
+    const ins = document.querySelectorAll(".sight input[data-k='d']"); ins[ins.length - 1]?.focus();
+  });
+}
+function touched() { state.example = false; save(); syncToggles(); compute(); }
+
+function syncToggles() {
+  $("hzSea").setAttribute("aria-pressed", String(!state.artificial));
+  $("hzArt").setAttribute("aria-pressed", String(!!state.artificial));
+  $("eyeWrap").hidden = !!state.artificial;
+  document.querySelectorAll("[data-limb]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.limb === state.limb)));
+  document.querySelectorAll("[data-lat]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.lat === state.latH)));
+  document.querySelectorAll("[data-lon]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.lon === state.lonH)));
+  $("tzLocal").setAttribute("aria-pressed", String(state.tz === "local"));
+  $("tzUtc").setAttribute("aria-pressed", String(state.tz === "utc"));
+  const off = -new Date().getTimezoneOffset() / 60;
+  $("tzHint").innerHTML = state.tz === "local"
+    ? `Heure de la montre, convertie en UTC par le téléphone (actuellement UTC${off >= 0 ? "+" : "−"}${Math.abs(off)}).`
+    : `Heure UTC directe. <b>En Suisse : heure de la montre − 1 h en hiver, − 2 h en été.</b>`;
+  const hints = {
+    centre: state.artificial ? "Soleil superposé exactement à son reflet : pas de correction de demi-diamètre." : "Centre du disque sur l'horizon : pas de correction de demi-diamètre.",
+    inf: state.artificial ? "Disques bord à bord (bas du Soleil sur le haut du reflet) : +16′." : "Bord inférieur posé sur l'horizon : +16′.",
+    sup: state.artificial ? "Disques bord à bord (haut du Soleil sur le bas du reflet) : −16′." : "Bord supérieur posé sur l'horizon : −16′."
+  };
+  $("limbHint").textContent = hints[state.limb];
+  $("exampleTag").hidden = !state.example;
+}
+
+/* ---------- heures ---------- */
+function dateParts(d, tz) {
+  if (tz === "utc") return { date: `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`, time: `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}` };
+  return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}` };
+}
+function toDate(s, tz) {
+  if (!s.date || !s.time) return null;
+  const t = s.time.length === 5 ? s.time + ":00" : s.time;
+  const d = new Date(tz === "utc" ? `${s.date}T${t}Z` : `${s.date}T${t}`);
+  return isNaN(d) ? null : d;
+}
+function switchTz(tz) {
+  if (tz === state.tz) return;
+  state.sights.forEach(s => { const d = toDate(s, state.tz); if (d) Object.assign(s, dateParts(d, tz)); });
+  state.tz = tz; renderSights(); touched();
+}
+
+/* ---------- visées ---------- */
+function renderSights() {
+  const box = $("sights"); box.innerHTML = "";
+  state.sights.forEach((s, i) => {
+    const el = document.createElement("div"); el.className = "sight";
+    el.innerHTML = `
+      <div class="sight-head"><span class="n">Visée ${i + 1}</span>
+        <div class="actions">
+          <button type="button" class="btn small" data-act="now">Heure actuelle</button>
+          ${state.sights.length > 1 ? `<button type="button" class="btn small ghost" data-act="del" aria-label="Supprimer la visée ${i + 1}">Supprimer</button>` : ""}
+        </div></div>
+      <div class="field"><span class="label">Lecture brute du sextant</span>
+        <div class="angle">
+          <span class="sp"></span>
+          <input type="text" inputmode="decimal" data-k="d" id="s${i}d" aria-label="Visée ${i + 1}, degrés"><span class="u">°</span>
+          <input type="text" inputmode="decimal" data-k="m" id="s${i}m" aria-label="Visée ${i + 1}, minutes"><span class="u">′</span>
+          <input type="text" inputmode="decimal" data-k="s" id="s${i}s" placeholder="0" aria-label="Visée ${i + 1}, secondes"><span class="u">″</span>
+        </div></div>
+      <div class="grid2">
+        <div class="field"><label for="s${i}date">Date</label><input type="date" data-k="date" id="s${i}date"></div>
+        <div class="field"><label for="s${i}time">Heure (h:min:s)</label><input type="time" step="1" data-k="time" id="s${i}time"></div>
+      </div>`;
+    el.querySelectorAll("input[data-k]").forEach(inp => {
+      inp.value = s[inp.dataset.k] ?? "";
+      inp.addEventListener("input", () => { s[inp.dataset.k] = inp.value; touched(); });
+    });
+    el.querySelector("[data-act='now']").addEventListener("click", () => { Object.assign(s, dateParts(new Date(), state.tz)); renderSights(); touched(); });
+    el.querySelector("[data-act='del']")?.addEventListener("click", () => { state.sights.splice(i, 1); renderSights(); touched(); });
+    box.appendChild(el);
+  });
+}
+
+/* ---------- calcul et affichage ---------- */
+const fmt = (x, n = 3) => isFinite(x) ? x.toFixed(n) : "—";
+function sev(i) { const a = Math.abs(i); return a < 10 ? "ok" : a < 30 ? "warn" : "bad"; }
+function degToDMs(x) { const a = Math.abs(x), d = Math.floor(a), m = (a - d) * 60; return `${d}°${m.toFixed(1).padStart(4, "0")}′`; }
+
+function compute() {
+  const res = $("resBody");
+  const zero = state.zeroSign * (dmToDeg(state.zeroD, state.zeroM) || 0);
+  const latE = state.latH * dmToDeg(state.latD, state.latM);
+  const lonE = state.lonH * dmToDeg(state.lonD, state.lonM);
+  const sights = state.sights.map(s => ({ reading: dmToDeg(s.d, s.m, s.s), date: toDate(s, state.tz) }))
+                             .filter(s => isFinite(s.reading) && s.reading > 0 && s.date);
+  const problems = [];
+  if (!isFinite(latE) || Math.abs(latE) > 89) problems.push("Latitude estimée manquante ou invalide.");
+  if (!isFinite(lonE) || Math.abs(lonE) > 180) problems.push("Longitude estimée manquante ou invalide.");
+  if (!sights.length) problems.push("Saisissez au moins une visée complète : lecture, date et heure.");
+  if (problems.length) {
+    res.innerHTML = problems.map(p => `<p class="error">${p}</p>`).join("");
+    $("barPos").innerHTML = `—<small>${problems[0]}</small>`;
+    return;
+  }
+  const r = computeFix({ sights, zero, factor: +state.factor, artificial: !!state.artificial,
+    eyeHeight: num(state.eye) || 0, limb: state.limb, temp: isFinite(num(state.temp)) ? num(state.temp) : 10,
+    pressure: num(state.press) || 1010, latE, lonE });
+  if (r.error) { res.innerHTML = `<p class="error">${r.error}</p>` + table(r.lines); $("barPos").innerHTML = `—<small>Droites presque parallèles</small>`; return; }
+
+  const worst = Math.max(...r.lines.map(l => Math.abs(l.intercept)));
+  const s = sev(worst);
+  const lowSun = r.lines.some(l => l.ho < 10);
+  const pillTxt = s === "ok" ? `Cohérent : intercept max. ${worst.toFixed(1)} M`
+                : s === "warn" ? `À vérifier : intercept ${worst.toFixed(1)} M`
+                : `Erreur probable : intercept ${worst.toFixed(1)} M`;
+  const advice = s === "ok" ? "" : `<p class="note">Un intercept élevé vient presque toujours d'une saisie : heure (UTC ou locale ?), zéro, partie du Soleil visée (centre ou bord), horizon, ou position estimée trop éloignée. Avec un horizon artificiel et le Soleil superposé à son reflet, choisissez « Centre ».</p>`;
+  const one = r.lines.length === 1 ? `<p class="note">Une seule visée : le point est le plus proche de votre position estimée sur la droite de hauteur. Il est fiable dans la direction du Soleil (azimut ${r.lines[0].azimuth.toFixed(0)}°) seulement.</p>` : "";
+  const latLon = `${r.lat.toFixed(5)}, ${r.lon.toFixed(5)}`;
+  res.innerHTML = `
+    <div class="fix">
+      <div class="pos">${formatDM(r.lat, "lat")}<br>${formatDM(r.lon, "lon")}</div>
+      <div class="dec">${latLon}</div>
+      <div class="actions" style="margin-top:4px">
+        <span class="pill ${s}">${pillTxt}</span>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn small" id="copyBtn">Copier les coordonnées</button>
+        <a class="btn small" style="text-decoration:none" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat=${r.lat.toFixed(5)}&mlon=${r.lon.toFixed(5)}#map=12/${r.lat.toFixed(5)}/${r.lon.toFixed(5)}">Voir sur la carte</a>
+      </div>
+      ${one}${advice}
+      ${lowSun ? `<p class="note">Soleil à moins de 10° de hauteur : la réfraction est incertaine, renseignez température et pression.</p>` : ""}
+    </div>
+    ${plot(r)}
+    ${table(r.lines)}`;
+  $("copyBtn").addEventListener("click", e => {
+    const txt = `${formatDM(r.lat, "lat")} ${formatDM(r.lon, "lon")} (${latLon})`;
+    const b = e.currentTarget;
+    const done = () => { b.textContent = "Copié"; setTimeout(() => b.textContent = "Copier les coordonnées", 1500); };
+    try { navigator.clipboard.writeText(txt).then(done, () => { b.textContent = txt; }); } catch (err) { b.textContent = txt; }
+  });
+  $("barPos").innerHTML = `${formatDM(r.lat, "lat")}&nbsp; ${formatDM(r.lon, "lon")}<small>${pillTxt}</small>`;
+}
+
+function table(lines) {
+  return `<div class="table-wrap"><table>
+    <thead><tr><th>Heure UTC</th><th>Lecture</th><th>Hs</th><th>Ho</th><th>Hc</th><th>Intercept</th><th>Azimut</th></tr></thead>
+    <tbody>${lines.map(l => `<tr>
+      <td>${pad(l.date.getUTCHours())}:${pad(l.date.getUTCMinutes())}:${pad(l.date.getUTCSeconds())}</td>
+      <td>${degToDMs(l.reading)}</td><td>${degToDMs(l.hs)}</td><td>${degToDMs(l.ho)}</td><td>${degToDMs(l.hc)}</td>
+      <td class="int-${sev(l.intercept)}">${l.intercept >= 0 ? "+" : "−"}${Math.abs(l.intercept).toFixed(1)} M</td>
+      <td>${l.azimuth.toFixed(1)}°</td></tr>`).join("")}</tbody></table></div>
+    <p class="note">Hs : lecture − zéro, ÷ 2. Ho : Hs corrigée (réfraction, demi-diamètre, horizon). Hc : hauteur attendue à la position estimée. Intercept = Ho − Hc en milles nautiques (1 M = 1,852 km) ; positif = vers le Soleil.</p>`;
+}
+
+function plot(r) {
+  // repère local en milles : x vers l'Est, y vers le Nord, position estimée au centre
+  const pts = r.lines.map(l => { const z = l.azimuth * Math.PI / 180; return { z, x: l.intercept * Math.sin(z), y: l.intercept * Math.cos(z), l }; });
+  const ext = Math.max(4, Math.abs(r.dLon), Math.abs(r.dLat), ...pts.map(p => Math.hypot(p.x, p.y))) * 1.35;
+  const S = 300, c = S / 2, k = (S / 2 - 18) / ext;
+  const X = x => c + x * k, Y = y => c - y * k;
+  const nice = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].find(v => v * k >= 40) || 1000;
+  let g = "";
+  for (let v = -Math.floor(ext / nice) * nice; v <= ext; v += nice) {
+    g += `<line x1="${X(v)}" y1="8" x2="${X(v)}" y2="${S - 8}" stroke="var(--line)" stroke-width="${v === 0 ? 1.2 : 0.6}"/>`;
+    g += `<line x1="8" y1="${Y(v)}" x2="${S - 8}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${v === 0 ? 1.2 : 0.6}"/>`;
+  }
+  const L = ext * 3;
+  const lops = pts.map((p, i) => {
+    const dx = Math.cos(p.z), dy = -Math.sin(p.z);
+    const az = `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(p.x)}" y2="${Y(p.y)}" stroke="var(--sea)" stroke-width="1" stroke-dasharray="3 3"/>`;
+    return az + `<line x1="${X(p.x - dx * L)}" y1="${Y(p.y - dy * L)}" x2="${X(p.x + dx * L)}" y2="${Y(p.y + dy * L)}" stroke="var(--sea)" stroke-width="2"/>`;
+  }).join("");
+  return `<svg class="plot" viewBox="0 0 ${S} ${S}" role="img" aria-label="Droites de hauteur autour de la position estimée">
+    <defs><clipPath id="cp"><rect x="8" y="8" width="${S - 16}" height="${S - 16}"/></clipPath></defs>
+    <rect x="8" y="8" width="${S - 16}" height="${S - 16}" fill="var(--field)" stroke="var(--line)"/>
+    <g clip-path="url(#cp)">${g}${lops}</g>
+    <circle cx="${X(0)}" cy="${Y(0)}" r="4" fill="var(--surface)" stroke="var(--muted)" stroke-width="1.5"/>
+    <circle cx="${X(r.dLon)}" cy="${Y(r.dLat)}" r="6" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>
+    <text x="${S - 12}" y="22" text-anchor="end">N ↑</text>
+    <text x="14" y="${S - 14}">quadrillage ${nice} M</text>
+    <text x="${X(0) + 7}" y="${Y(0) - 7}">estimée</text>
+  </svg>
+  <p class="note" style="text-align:center">Trait bleu : droite de hauteur. Point cuivre : position calculée. Cercle : position estimée.</p>`;
+}
+
+bindFields(); syncToggles(); renderSights(); compute();
+if ("serviceWorker" in navigator) { window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {})); }
+</script>
+
+</body></html>
