@@ -2,7 +2,7 @@
 
 Calcul du point astronomique au Soleil à partir de la lecture brute du sextant.
 
-**Utiliser l'application :** https://votre-nom.github.io/point-soleil/
+**Utiliser l'application :** https://DDeriaz.github.io/point-soleil/
 Sur iPhone : Safari → Partager → « Sur l'écran d'accueil ».
 Sur Android : Chrome → menu ⋮ → « Installer l'application ».
 Une fois installée, elle fonctionne sans connexion.
