@@ -135,7 +135,7 @@ table { border-collapse: collapse; width: 100%; font: 13px var(--font-data); fon
 th, td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
 th { font: 600 11px var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 th:first-child, td:first-child { text-align: left; }
-td.int-ok { color: var(--ok); } td.int-warn { color: var(--warn); } td.int-bad { color: var(--bad); font-weight: 600; }
+tdb.int-ok, .int-ok { color: var(--ok); } td.int-warn { color: var(--warn); } td.int-bad { color: var(--bad); font-weight: 600; }
 
 details summary { cursor: pointer; color: var(--sea); font-weight: 500; font-size: 14px; }
 details[open] summary { margin-bottom: 10px; }
@@ -220,7 +220,7 @@ details[open] summary { margin-bottom: 10px; }
     <div id="resBody"></div>
   </section>
 
-  <p class="note" style="padding-bottom: 8px">Éphémérides du Soleil calculées (précision ≈ 0,6′, soit environ 1 mille). Méthode de l'intercept (Marcq Saint-Hilaire), point par moindres carrés pour plusieurs visées, en supposant la même erreur d'estime pour toutes les visées.</p>
+  <p class="note" style="padding-bottom: 8px">Éphémérides du Soleil calculées (précision ≈ 0,6′, soit environ 1 mille). Méthode de l'intercept (Marcq Saint-Hilaire), point par moindres carrés pour plusieurs visées (calcul itéré), en supposant la même erreur d'estime pour toutes les visées.</p>
 </main>
 
 <div class="bar" role="status" aria-live="polite">
@@ -273,11 +273,8 @@ function trueAltitude(hs, { eyeHeight = 0, limb = "inf", temp = 10, pressure = 1
 // l'erreur de l'estime (écart entre position vraie et position estimée) est la même
 // pour toutes les visées : c'est elle qu'on cherche, et le point est donné au moment
 // de la dernière visée.
-function computeFix({ sights, factor = 0.5, artificial = false,
-                      eyeHeight = 2, limb = "inf", temp = 10, pressure = 1010 }) {
-  if (artificial) eyeHeight = 0;
-  sights = sights.slice().sort((a, b) => a.date - b.date);
-  const lines = sights.map(s => {
+function reduceSights(sights, factor, artificial, eyeHeight, limb, temp, pressure) {
+  return sights.map(s => {
     const latE = s.latE, lonE = s.lonE;
     const hs = (s.reading - s.zero) * factor;
     const t = trueAltitude(hs, { eyeHeight, limb, temp, pressure });
@@ -289,23 +286,63 @@ function computeFix({ sights, factor = 0.5, artificial = false,
                Math.cos(phi) * Math.sin(d) - Math.sin(phi) * Math.cos(d) * Math.cos(h)) * R2D, 360);
     return { date: s.date, reading: s.reading, zero: s.zero, latE, lonE, hs, ho: t.ho, hc, intercept: (t.ho - hc) * 60, azimuth: zn, gha, dec, lha, corr: t };
   });
-  let dLat, dLon;
+}
+function solveOffset(lines) {
   if (lines.length === 1) {
     const z = lines[0].azimuth * D2R;
-    dLat = lines[0].intercept * Math.cos(z); dLon = lines[0].intercept * Math.sin(z);
-  } else {
-    let a = 0, b = 0, c = 0, p = 0, q = 0;
-    for (const l of lines) {
-      const cz = Math.cos(l.azimuth * D2R), sz = Math.sin(l.azimuth * D2R);
-      a += cz * cz; b += cz * sz; c += sz * sz; p += cz * l.intercept; q += sz * l.intercept;
-    }
-    const det = a * c - b * b;
-    if (Math.abs(det) < 1e-6) return { error: "Les droites de hauteur sont presque parallèles : espacez davantage vos visées (azimuts différents d'au moins 30°)." , lines};
-    dLat = (c * p - b * q) / det; dLon = (a * q - b * p) / det;
+    return { dLat: lines[0].intercept * Math.cos(z), dLon: lines[0].intercept * Math.sin(z) };
   }
-  const ref = lines[lines.length - 1];
-  const moved = lines.some(l => Math.abs(l.latE - ref.latE) > 1e-9 || Math.abs(l.lonE - ref.lonE) > 1e-9);
-  return { lat: ref.latE + dLat / 60, lon: ref.lonE + dLon / 60 / Math.cos(ref.latE * D2R), dLat, dLon, lines, ref, moved };
+  let a = 0, b = 0, c = 0, p = 0, q = 0;
+  for (const l of lines) {
+    const cz = Math.cos(l.azimuth * D2R), sz = Math.sin(l.azimuth * D2R);
+    a += cz * cz; b += cz * sz; c += sz * sz; p += cz * l.intercept; q += sz * l.intercept;
+  }
+  const det = a * c - b * b;
+  if (det < 0.03) return null;   // droites presque parallèles (écart d'azimut < ~10°)
+  return { dLat: (c * p - b * q) / det, dLon: (a * q - b * p) / det };
+}
+// Plus grand écart d'angle entre deux droites de hauteur (0–90°)
+function cutAngle(lines) {
+  let best = 0;
+  for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) {
+    let d = Math.abs(lines[i].azimuth - lines[j].azimuth) % 180; if (d > 90) d = 180 - d;
+    best = Math.max(best, d);
+  }
+  return best;
+}
+const normLon = x => mod(x + 180, 360) - 180;
+
+// Chaque visée porte sa lecture, son zéro, son heure et sa position estimée (latE, lonE).
+// Si les positions estimées diffèrent (déplacement entre les visées), on suppose que
+// l'erreur de l'estime est la même pour toutes les visées : c'est elle qu'on cherche,
+// et le point est donné au moment de la dernière visée.
+// Le calcul est itéré : chaque passe repart des positions estimées corrigées, ce qui
+// supprime l'erreur due à l'approximation des cercles de hauteur par des droites.
+function computeFix({ sights, factor = 0.5, artificial = false,
+                      eyeHeight = 2, limb = "inf", temp = 10, pressure = 1010 }) {
+  if (artificial) eyeHeight = 0;
+  const orig = sights.slice().sort((a, b) => a.date - b.date);
+  let work = orig.map(s => ({ ...s }));
+  let totLat = 0, totLon = 0, firstLines = null, lines, iterations = 0;
+  for (let it = 0; it < 8; it++) {
+    lines = reduceSights(work, factor, artificial, eyeHeight, limb, temp, pressure);
+    if (!firstLines) firstLines = lines;
+    const off = solveOffset(lines);
+    if (!off) return { error: "Les droites de hauteur sont presque parallèles : espacez davantage vos visées (azimuts différents d'au moins 30°).", lines: firstLines };
+    totLat += off.dLat; totLon += off.dLon; iterations = it + 1;
+    work = orig.map(s => ({ ...s,
+      latE: s.latE + totLat / 60,
+      lonE: normLon(s.lonE + totLon / 60 / Math.cos(s.latE * D2R)) }));
+    if (Math.hypot(off.dLat, off.dLon) < 0.01) break;
+  }
+  const ref = work[work.length - 1], refOrig = orig[orig.length - 1];
+  const moved = orig.some(s => Math.abs(s.latE - refOrig.latE) > 1e-9 || Math.abs(s.lonE - refOrig.lonE) > 1e-9);
+  // les lignes affichées sont celles de la première passe (depuis la position estimée saisie)
+  const finalLines = reduceSights(work, factor, artificial, eyeHeight, limb, temp, pressure);
+  const residual = Math.max(...finalLines.map(l => Math.abs(l.intercept)));
+  return { lat: ref.latE, lon: normLon(ref.lonE), dLat: totLat, dLon: totLon,
+           lines: firstLines, ref: { ...refOrig, date: refOrig.date }, moved, iterations,
+           cut: orig.length > 1 ? cutAngle(firstLines) : null, residual };
 }
 
 function formatDM(x, type) {
@@ -495,14 +532,30 @@ function compute() {
   if (r.error) { res.innerHTML = `<p class="error">${r.error}</p>` + table(r.lines); $("barPos").innerHTML = `—<small>Droites presque parallèles</small>`; return; }
 
   const worst = Math.max(...r.lines.map(l => Math.abs(l.intercept)));
-  const s = sev(worst);
   const lowSun = r.lines.some(l => l.ho < 10);
-  const pillTxt = s === "ok" ? `Cohérent : intercept max. ${worst.toFixed(1)} M`
-                : s === "warn" ? `À vérifier : intercept ${worst.toFixed(1)} M`
-                : `Erreur probable : intercept ${worst.toFixed(1)} M`;
-  const advice = s === "ok" ? "" : `<p class="note">Un intercept élevé vient presque toujours d'une saisie : heure (UTC ou locale ?), zéro, partie du Soleil visée (centre ou bord), horizon, ou position estimée trop éloignée. Avec un horizon artificiel et le Soleil superposé à son reflet, choisissez « Centre ».</p>`;
+  const shift = Math.hypot(r.dLat, r.dLon);
+  let s, pillTxt;
+  if (r.lines.length >= 3) {
+    // trois visées ou plus : on juge l'accord des visées entre elles
+    s = r.residual < 3 ? "ok" : r.residual < 8 ? "warn" : "bad";
+    pillTxt = s === "ok" ? `Visées cohérentes : écart max. ${r.residual.toFixed(1)} M`
+            : s === "warn" ? `À vérifier : une droite à ${r.residual.toFixed(1)} M du point`
+            : `Visée fausse probable : ${r.residual.toFixed(1)} M`;
+  } else {
+    s = sev(worst);
+    pillTxt = s === "ok" ? `Cohérent : intercept max. ${worst.toFixed(1)} M`
+            : s === "warn" ? `À vérifier : intercept ${worst.toFixed(1)} M`
+            : `Erreur probable : intercept ${worst.toFixed(1)} M`;
+  }
+  const advice = s === "ok" ? "" : r.lines.length >= 3 ? `<p class="note">Les visées ne s'accordent pas : cherchez celle dont l'intercept diffère des autres dans le tableau et vérifiez sa lecture, son zéro et son heure, ou supprimez-la.</p>` : `<p class="note">Un intercept élevé vient presque toujours d'une saisie : heure (UTC ou locale ?), zéro, partie du Soleil visée (centre ou bord), horizon, ou position estimée trop éloignée. Avec un horizon artificiel et le Soleil superposé à son reflet, choisissez « Centre ».</p>`;
   const movedNote = r.moved ? `<p class="note">Positions estimées différentes selon les visées : point calculé pour le moment de la dernière visée (${pad(r.ref.date.getUTCHours())}:${pad(r.ref.date.getUTCMinutes())} UTC), en supposant la même erreur d'estime pour toutes.</p>` : "";
   const one = r.lines.length === 1 ? `<p class="note">Une seule visée : le point est le plus proche de votre position estimée sur la droite de hauteur. Il est fiable dans la direction du Soleil (azimut ${r.lines[0].azimuth.toFixed(0)}°) seulement.</p>` : "";
+  const geo = [];
+  const below = r.lines.filter(l => l.ho < 3);
+  if (below.length) geo.push(`<p class="error">Hauteur observée inférieure à 3° (visée ${below.map(l => r.lines.indexOf(l) + 1).join(", ")}) : vérifiez la lecture et le zéro ; si le Soleil était vraiment si bas, la réfraction rend la visée inutilisable.</p>`);
+  if (r.lines.some(l => l.ho > 80)) geo.push(`<p class="note">Soleil à plus de 80° : les cercles de hauteur sont petits et deux visées peuvent se couper en deux points. Vérifiez que le résultat est proche de votre position estimée.</p>`);
+  if (r.cut !== null && r.cut < 30) geo.push(`<p class="note">Les droites se coupent sous un angle faible (${r.cut.toFixed(0)}°) : le point est peu précis. Espacez davantage les visées (au moins 30° d'écart d'azimut).</p>`);
+  if (r.lines.length >= 3) geo.push(`<p class="note">Point à ${shift.toFixed(1)} M de votre position estimée.</p>`);
   const latLon = `${r.lat.toFixed(5)}, ${r.lon.toFixed(5)}`;
   res.innerHTML = (warnHtml ? warnHtml + `<p class="note">Résultat calculé sans ces visées.</p>` : "") + `
     <div class="fix">
@@ -515,7 +568,7 @@ function compute() {
         <button type="button" class="btn small" id="copyBtn">Copier les coordonnées</button>
         <a class="btn small" style="text-decoration:none" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat=${r.lat.toFixed(5)}&mlon=${r.lon.toFixed(5)}#map=12/${r.lat.toFixed(5)}/${r.lon.toFixed(5)}">Voir sur la carte</a>
       </div>
-      ${one}${movedNote}${advice}
+      ${one}${movedNote}${geo.join("")}${advice}
       ${lowSun ? `<p class="note">Soleil à moins de 10° de hauteur : la réfraction est incertaine, renseignez température et pression.</p>` : ""}
     </div>
     ${plot(r)}
