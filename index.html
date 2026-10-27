@@ -104,6 +104,9 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .sight-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
 .sight .angle + .angle { margin-top: 6px; }
 .sight-head .n { font: 600 13px var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+.clock { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto; align-items: center; gap: 4px; max-width: 320px; }
+.clock input { text-align: right; padding-inline: 8px; min-width: 0; background: var(--surface); }
+.clock .u { font-family: var(--font-data); color: var(--muted); font-size: 13px; }
 .sight .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .sight .grid2 input { min-width: 0; padding-inline: 8px; }
 .sight input { background: var(--surface); }
@@ -411,10 +414,13 @@ function renderSights() {
           <input type="text" inputmode="decimal" data-k="zD" id="s${i}zd" placeholder="0" aria-label="Visée ${i + 1}, zéro, degrés"><span class="u">°</span>
           <input type="text" inputmode="decimal" data-k="zM" id="s${i}zm" placeholder="0" aria-label="Visée ${i + 1}, zéro, minutes"><span class="u">′</span>
         </div></div>
-      <div class="grid2">
-        <div class="field"><label for="s${i}date">Date</label><input type="date" data-k="date" id="s${i}date"></div>
-        <div class="field"><label for="s${i}time">Heure (h:min:s)</label><input type="time" step="1" data-k="time" id="s${i}time"></div>
-      </div>
+      <div class="field"><label for="s${i}date">Date</label><input type="date" data-k="date" id="s${i}date" style="max-width: 220px"></div>
+      <div class="field"><span class="label">Heure de la visée</span>
+        <div class="clock">
+          <input type="text" inputmode="numeric" maxlength="2" data-t="0" id="s${i}hh" placeholder="hh" aria-label="Visée ${i + 1}, heures"><span class="u">h</span>
+          <input type="text" inputmode="numeric" maxlength="2" data-t="1" id="s${i}mi" placeholder="mm" aria-label="Visée ${i + 1}, minutes"><span class="u">min</span>
+          <input type="text" inputmode="numeric" maxlength="2" data-t="2" id="s${i}ss" placeholder="ss" aria-label="Visée ${i + 1}, secondes"><span class="u">s</span>
+        </div></div>
       <div class="field"><span class="label">Position estimée au moment de la visée</span>
         <div class="angle nosec">
           <select data-k="latH" id="s${i}lath" aria-label="Visée ${i + 1}, Nord ou Sud"><option value="1">N</option><option value="-1">S</option></select>
@@ -429,6 +435,17 @@ function renderSights() {
     el.querySelectorAll("[data-k]").forEach(inp => {
       inp.value = s[inp.dataset.k] ?? "";
       inp.addEventListener(inp.tagName === "SELECT" ? "change" : "input", () => { s[inp.dataset.k] = inp.value; touched(); });
+    });
+    const tparts = (s.time || "").split(":");
+    const tIns = [...el.querySelectorAll("input[data-t]")];
+    tIns.forEach((inp, k) => {
+      inp.value = tparts[k] ?? "";
+      inp.addEventListener("input", () => {
+        const v = tIns.map(x => x.value.trim());
+        s.time = v[0] && v[1] ? `${pad(+v[0])}:${pad(+v[1])}:${pad(+(v[2] || 0))}` : "";
+        if (k < 2 && inp.value.length === 2) tIns[k + 1].focus();
+        touched();
+      });
     });
     el.querySelector("[data-act='copy']")?.addEventListener("click", () => {
       const p = state.sights[i - 1];
